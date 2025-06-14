@@ -101,7 +101,7 @@ export function Chat({ chatId }: ChatProps) {
           </Tabs.List>
           {sequences.map((seq) => (
             <Tabs.Panel key={seq.id} value={seq.id} style={{ flex: 1, display: 'flex' }}>
-              <Sequence />
+              <Sequence id={seq.id} />
             </Tabs.Panel>
           ))}
         </Tabs>
