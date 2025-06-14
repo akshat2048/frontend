@@ -1,5 +1,5 @@
-import { Chat } from '../components/Chat';
+import { ChatManager } from '~/components/ChatManager';
 
 export default function ChatRoute() {
-  return <Chat />;
+  return <ChatManager />;
 } 

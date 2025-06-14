@@ -5,7 +5,11 @@ import type { ChatMessage } from '../constants/types';
 import { v4 as uuidv4 } from 'uuid';
 import { Sequence } from './Sequence';
 
-export function Chat() {
+interface ChatProps {
+  chatId: string;
+}
+
+export function Chat({ chatId }: ChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [sequences, setSequences] = useState([{ id: '1' }, { id: '2' }, { id: '3' }]);
@@ -15,13 +19,15 @@ export function Chat() {
     socket.connect();
 
     socket.on('message', (message: ChatMessage) => {
-      setMessages((prev) => [...prev, message]);
+      if (message.chatWorkspaceId === chatId || message.chatWorkspaceId === "global") {
+        setMessages((prev) => [...prev, message]);
+      }
     });
 
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [chatId]);
 
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
@@ -32,7 +38,7 @@ export function Chat() {
       sender: 'user',
       timestamp: Date.now(),
       isEditing: false,
-      chatWorkspaceId: 'default'
+      chatWorkspaceId: chatId
     };
 
     socket.emit('message', message);
