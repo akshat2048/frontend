@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Box, Paper, TextInput, Button, Stack, Text, Group, Flex, Title } from '@mantine/core';
+import { Box, Paper, TextInput, Button, Stack, Text, Group, Flex, Title, Tabs } from '@mantine/core';
 import { socket } from '../socket';
 import type { ChatMessage } from '../constants/types';
 import { v4 as uuidv4 } from 'uuid';
+import { Sequence } from './Sequence';
 
 export function Chat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [sequences, setSequences] = useState([{ id: '1' }, { id: '2' }, { id: '3' }]);
+  const [activeTab, setActiveTab] = useState('1');
 
   useEffect(() => {
     socket.connect();
@@ -80,12 +83,22 @@ export function Chat() {
       <Paper withBorder p="md" style={{ width: '66.66%', minWidth: 400, display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Title order={2} mb="sm" style={{ fontWeight: 600, color: '#f44336' }}>Workspace</Title>
         <Box style={{ borderTop: '4px solid #f44336', marginBottom: 16 }} />
-        <Paper withBorder p="md" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <Title order={4} mb="sm">Sequence</Title>
-          <Box style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>
-            <Text color="dimmed">No sequence generated.</Text>
-          </Box>
-        </Paper>
+        <Tabs
+          value={activeTab}
+          onChange={(val) => setActiveTab(val ?? sequences[0]?.id)}
+          style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
+        >
+          <Tabs.List>
+            {sequences.map((seq, idx) => (
+              <Tabs.Tab key={seq.id} value={seq.id}>{`Sequence ${idx + 1}`}</Tabs.Tab>
+            ))}
+          </Tabs.List>
+          {sequences.map((seq) => (
+            <Tabs.Panel key={seq.id} value={seq.id} style={{ flex: 1, display: 'flex' }}>
+              <Sequence />
+            </Tabs.Panel>
+          ))}
+        </Tabs>
       </Paper>
     </Flex>
   );
