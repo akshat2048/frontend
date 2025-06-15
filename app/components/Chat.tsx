@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Box, Paper, TextInput, Button, Stack, Text, Group, Flex, Title, Tabs } from '@mantine/core';
+import { Box, Paper, TextInput, Button, Stack, Text, Group, Flex, Title } from '@mantine/core';
 import { socket } from '../socket';
-import type { Message, Sequence as SequenceType } from '../constants/types';
+import type { Message, SequenceStep as SequenceStepType } from '../constants/types';
 import { v4 as uuidv4 } from 'uuid';
-import { Sequence } from './Sequence';
 import { useApi } from '../hooks/useApi';
 import { useAuth } from '../context/AuthContext';
+import { SequenceStep } from './SequenceStep';
 
 interface ChatProps {
   workspaceId: string;
@@ -14,14 +14,13 @@ interface ChatProps {
 export function Chat({ workspaceId: chatId }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [sequences, setSequences] = useState<SequenceType[]>([]);
-  const [activeTab, setActiveTab] = useState<string | null>(null);
-  const { callApi: callSequencesApi, error: sequencesError, loading: sequencesLoading } = useApi<SequenceType[]>();
+  const [sequence, setSequence] = useState<SequenceStepType[]>([]);
+  const { callApi: callSequenceApi, error: sequenceError, loading: sequenceLoading } = useApi<SequenceStepType[]>();
   const { callApi: callMessagesApi, error: messagesError, loading: messagesLoading } = useApi<Message[]>();
 
   useEffect(() => {
-    callSequencesApi(`/workspace/${chatId}/sequences`, { method: 'GET' }).then((data) => {
-      if (data) setSequences(data);
+    callSequenceApi(`/workspace/${chatId}/sequence`, { method: 'GET' }).then((data) => {
+      if (data) setSequence(data);
     });
   }, []);
 
@@ -67,15 +66,15 @@ export function Chat({ workspaceId: chatId }: ChatProps) {
     setNewMessage('');
   };
 
-  if (sequencesError || messagesError) {
+  if (sequenceError || messagesError) {
     return (
       <Flex h="100vh" p="lg" justify="center" align="center">
-        <Text color="red" size="xl">Failed to load workspace data: {sequencesError || messagesError}</Text>
+        <Text color="red" size="xl">Failed to load workspace data: {sequenceError || messagesError}</Text>
       </Flex>
     );
   }
 
-  if (sequencesLoading || messagesLoading) {
+  if (sequenceLoading || messagesLoading) {
     return (
       <Flex h="100vh" p="lg" justify="center" align="center">
         <Text>Loading...</Text>
@@ -126,22 +125,14 @@ export function Chat({ workspaceId: chatId }: ChatProps) {
       <Paper withBorder p="md" style={{ width: '66.66%', minWidth: 400, display: 'flex', flexDirection: 'column', height: '100%' }}>
         <Title order={2} mb="sm" style={{ fontWeight: 600, color: '#f44336' }}>Workspace</Title>
         <Box style={{ borderTop: '4px solid #f44336', marginBottom: 16 }} />
-        <Tabs
-          value={activeTab}
-          onChange={(val) => setActiveTab(val)}
-          style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
-        >
-          <Tabs.List>
-            {sequences.map((seq, idx) => (
-              <Tabs.Tab key={seq.id} value={seq.id}>{`Sequence ${idx + 1}`}</Tabs.Tab>
-            ))}
-          </Tabs.List>
-          {sequences.map((seq) => (
-            <Tabs.Panel key={seq.id} value={seq.id} style={{ flex: 1, display: 'flex' }}>
-              <Sequence id={seq.id} />
-            </Tabs.Panel>
+        <Box style={{ flex: 1, overflowY: 'auto' }}>
+          {sequence && sequence.map((step) => (
+            <SequenceStep key={step.id} step={step} />
           ))}
-        </Tabs>
+          {(!sequence || sequence.length === 0) && (
+            <Text color="dimmed">No steps in this workspace yet.</Text>
+          )}
+        </Box>
       </Paper>
     </Flex>
   );

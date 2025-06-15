@@ -9,16 +9,6 @@ export type Workspace = {
   // sequences?: Sequence[];
 };
 
-export type Sequence = {
-  id: string; // UUID string
-  workspace_id: string; // Workspace.id
-  agent_context: string;
-  created_at: string; // ISO date string
-  // Optionally, you can add:
-  // workspace?: Workspace;
-  // steps?: SequenceStep[];
-};
-
 export type SequenceStep = {
   id: string; // UUID string
   position: number;
