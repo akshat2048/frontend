@@ -110,7 +110,7 @@ export function Chat({ workspaceId: chatId }: ChatProps) {
                 <Box
                   p="sm"
                   style={{
-                    backgroundColor: message.sender === 'user' ? '#BBDEFB' : '#ECECEC',
+                    backgroundColor: message.sender === 'user' ? '#BBDEFB' : message.sender === 'agent' ? '#E1BEE7' : '#ECECEC',
                     borderRadius: 8,
                     maxWidth: '80%',
                   }}

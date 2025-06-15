@@ -14,14 +14,10 @@ export function SequenceStep({ step }: SequenceStepProps) {
 
   const handleSave = async () => {
     try {
-      const response = await callApi(`/sequence_step/${step.id}`, {
+      callApi(`/sequence_step/${step.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ content })
+        body: JSON.stringify({ content: content.trim() })
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to update step');
-      }
 
       setIsEditing(false);
     } catch (error) {
