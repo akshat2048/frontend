@@ -1,7 +1,8 @@
-import { Paper, Text, Group, TextInput, Button } from '@mantine/core';
+import { Paper, Text, Group, TextInput, Button, ActionIcon, Tooltip } from '@mantine/core';
 import { useState } from 'react';
 import type { SequenceStep as SequenceStepType } from '../constants/types';
 import { useApi } from '../hooks/useApi';
+import { IconMail } from '@tabler/icons-react';
 
 interface SequenceStepProps {
   step: SequenceStepType;
@@ -28,7 +29,23 @@ export function SequenceStep({ step }: SequenceStepProps) {
   return (
     <Paper withBorder p="md" style={{ minWidth: 300, minHeight: 80, marginBottom: 16 }}>
       <Group justify="space-between" mb="xs">
-        <Text fw={500}>Step {step.position}</Text>
+        <Group>
+          <Text fw={500}>Step {step.position}</Text>
+          <Tooltip label={step.agent_context}>
+            <Text size="sm" c="dimmed">(Agent Context)</Text>
+          </Tooltip>
+          <ActionIcon 
+            variant="subtle" 
+            color="blue" 
+            onClick={() => {
+              const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&su=${encodeURIComponent(`Sequence Step ${step.position}`)}&body=${encodeURIComponent(content)}`;
+              window.open(gmailUrl, '_blank');
+            }}
+            title="Open in Gmail"
+          >
+            <IconMail size={16} />
+          </ActionIcon>
+        </Group>
         <Button 
           variant="subtle" 
           size="xs" 

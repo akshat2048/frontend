@@ -3,6 +3,8 @@ import { Button, Group, Tabs, Paper, TextInput } from '@mantine/core';
 import { Chat } from './Chat';
 import { v4 as uuidv4 } from 'uuid';
 import { useApi } from '../hooks/useApi';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router';
 import type { Workspace } from '../constants/types';
 
 export function ChatManager() {
@@ -13,7 +15,13 @@ export function ChatManager() {
   const [isInitialized, setIsInitialized] = useState(false);
   const { callApi: callWorkspaceApi, loading, error } = useApi<Workspace[]>();
   const { callApi: callWorkspaceRenameApi, loading: renameLoading, error: renameError } = useApi<Workspace>();
+  const { setBearerToken } = useAuth();
+  const navigate = useNavigate();
 
+  const handleLogout = () => {
+    setBearerToken(null);
+    navigate('/sso-login');
+  };
 
   useEffect(() => {
     const fetchWorkspaces = async () => {
@@ -80,9 +88,9 @@ export function ChatManager() {
         body: JSON.stringify({ name: editValue })
       });
 
-    //   setChats(chats.map(chat => 
-    //     chat.id === chatId ? { ...chat, name: editValue } : chat
-    //   ));
+      setChats(chats.map(chat => 
+        chat.id === chatId ? { ...chat, name: editValue } : chat
+      ));
       setEditingTab(null);
     } catch (error) {
       console.error('Error renaming workspace:', error);
@@ -99,8 +107,9 @@ export function ChatManager() {
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <Group p="md" style={{ borderBottom: '1px solid #eee' }}>
+      <Group p="md" style={{ borderBottom: '1px solid #eee' }} justify="space-between">
         <Button onClick={addNewChat}>Add New Chat</Button>
+        <Button variant="light" color="red" onClick={handleLogout}>Logout</Button>
       </Group>
       <Tabs 
         value={activeChat || undefined} 
