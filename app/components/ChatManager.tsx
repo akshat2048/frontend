@@ -3,20 +3,15 @@ import { Button, Group, Tabs, Paper, TextInput } from '@mantine/core';
 import { Chat } from './Chat';
 import { v4 as uuidv4 } from 'uuid';
 import { useApi } from '../hooks/useApi';
-
-interface ChatTab {
-  id: string;
-  name: string;
-  created_at?: Date;
-}
+import type { Workspace } from '../constants/types';
 
 export function ChatManager() {
-  const [chats, setChats] = useState<ChatTab[]>([]);
+  const [chats, setChats] = useState<Workspace[]>([]);
   const [activeChat, setActiveChat] = useState<string | null>(null);
   const [editingTab, setEditingTab] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
-  const { callApi, loading, error } = useApi<ChatTab[]>();
+  const { callApi, loading, error } = useApi<Workspace[]>();
 
   useEffect(() => {
     const fetchWorkspaces = async () => {
@@ -56,10 +51,19 @@ export function ChatManager() {
     fetchWorkspaces();
   }, []);
 
-  const addNewChat = () => {
-    const newId = uuidv4();
-    setChats([...chats, { id: newId, name: `Chat ${chats.length + 1}` }]);
-    setActiveChat(newId);
+  const addNewChat = async () => {
+    // Call the create workspace endpoint
+    const newWorkspace = await callApi('/workspace', {
+        method: 'POST',
+        body: JSON.stringify({ name: 'Chat 1' })
+      });
+
+    if (!newWorkspace) {
+    console.error('Failed to create workspace');
+    return;
+    }
+    setChats([...chats, newWorkspace]);
+    setActiveChat(newWorkspace.id);
   };
 
   const handleDoubleClick = (chatId: string, currentName: string) => {
@@ -143,7 +147,7 @@ export function ChatManager() {
 
         {chats.map((chat) => (
           <Tabs.Panel key={chat.id} value={chat.id} style={{ flex: 1 }}>
-            <Chat chatId={chat.id} />
+            <Chat workspaceId={chat.id} />
           </Tabs.Panel>
         ))}
       </Tabs>

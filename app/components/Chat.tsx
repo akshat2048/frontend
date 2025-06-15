@@ -1,47 +1,42 @@
 import { useEffect, useState } from 'react';
 import { Box, Paper, TextInput, Button, Stack, Text, Group, Flex, Title, Tabs } from '@mantine/core';
 import { socket } from '../socket';
-import type { Message } from '../constants/types';
+import type { Message, Sequence as SequenceType } from '../constants/types';
 import { v4 as uuidv4 } from 'uuid';
 import { Sequence } from './Sequence';
 import { useApi } from '../hooks/useApi';
+import { useAuth } from '../context/AuthContext';
 
 interface ChatProps {
-  chatId: string;
+  workspaceId: string;
 }
 
-interface WorkspaceSequence {
-  id: string;
-  created_at: string;
-  agent_context: string;
-}
-
-export function Chat({ chatId }: ChatProps) {
+export function Chat({ workspaceId: chatId }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [sequences, setSequences] = useState<WorkspaceSequence[]>([]);
+  const [sequences, setSequences] = useState<SequenceType[]>([]);
   const [activeTab, setActiveTab] = useState<string | null>(null);
-  const { callApi, error: apiError, loading } = useApi<WorkspaceSequence[]>();
+  const { callApi: callSequencesApi, error: sequencesError, loading: sequencesLoading } = useApi<SequenceType[]>();
+  const { callApi: callMessagesApi, error: messagesError, loading: messagesLoading } = useApi<Message[]>();
 
   useEffect(() => {
-    const fetchWorkspace = async () => {
-      try {
-        const response = await callApi(`/workspace?chatId=${chatId}`, {
-          method: 'GET'
-        });
-        setSequences(response);
-        if (response.length > 0) {
-          setActiveTab(response[0].id);
-        }
-      } catch (err) {
-        console.error('Error fetching workspace:', err);
-      }
+    callSequencesApi(`/workspace/${chatId}/sequences`, { method: 'GET' }).then((data) => {
+      if (data) setSequences(data);
+    });
+  }, []);
+
+  useEffect(() => {
+    callMessagesApi(`/workspace/${chatId}/messages`, { method: 'GET' }).then((data) => {
+      if (data) setMessages(data);
+    });
+  }, []);
+
+  const { bearerToken } = useAuth();
+
+  useEffect(() => {
+    socket.io.opts.extraHeaders = {
+      Authorization: `Bearer ${bearerToken}`
     };
-
-    fetchWorkspace();
-  }, [chatId, callApi]);
-
-  useEffect(() => {
     socket.connect();
 
     socket.on('message', (message: Message) => {
@@ -72,15 +67,15 @@ export function Chat({ chatId }: ChatProps) {
     setNewMessage('');
   };
 
-  if (apiError) {
+  if (sequencesError || messagesError) {
     return (
       <Flex h="100vh" p="lg" justify="center" align="center">
-        <Text color="red" size="xl">Failed to load workspace data</Text>
+        <Text color="red" size="xl">Failed to load workspace data: {sequencesError || messagesError}</Text>
       </Flex>
     );
   }
 
-  if (loading || sequences.length === 0) {
+  if (sequencesLoading || messagesLoading) {
     return (
       <Flex h="100vh" p="lg" justify="center" align="center">
         <Text>Loading...</Text>
