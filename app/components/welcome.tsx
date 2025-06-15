@@ -8,6 +8,8 @@ export function Welcome() {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome to Agentic Recruiter</h1>
         <div className="flex flex-col gap-4">
           <Button
+            component={Link}
+            to="/sso-login"
             variant="outline"
             color="gray"
             size="lg"

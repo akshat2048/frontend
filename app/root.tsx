@@ -9,6 +9,7 @@ import {
 import '@mantine/core/styles.css';
 import type { Route } from "./+types/root";
 import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from '@mantine/core';
+import { AuthProvider } from './context/AuthContext';
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
@@ -36,7 +37,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <MantineProvider>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </MantineProvider>
         <ScrollRestoration />
         <Scripts />

@@ -1,24 +1,50 @@
 import { useEffect, useState } from 'react';
 import { Box, Paper, TextInput, Button, Stack, Text, Group, Flex, Title, Tabs } from '@mantine/core';
 import { socket } from '../socket';
-import type { ChatMessage } from '../constants/types';
+import type { Message } from '../constants/types';
 import { v4 as uuidv4 } from 'uuid';
 import { Sequence } from './Sequence';
+import { useApi } from '../hooks/useApi';
 
 interface ChatProps {
   chatId: string;
 }
 
+interface WorkspaceSequence {
+  id: string;
+  created_at: string;
+  agent_context: string;
+}
+
 export function Chat({ chatId }: ChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [sequences, setSequences] = useState([{ id: '1' }, { id: '2' }, { id: '3' }]);
-  const [activeTab, setActiveTab] = useState('1');
+  const [sequences, setSequences] = useState<WorkspaceSequence[]>([]);
+  const [activeTab, setActiveTab] = useState<string | null>(null);
+  const { callApi, error: apiError, loading } = useApi<WorkspaceSequence[]>();
+
+  useEffect(() => {
+    const fetchWorkspace = async () => {
+      try {
+        const response = await callApi(`/workspace?chatId=${chatId}`, {
+          method: 'GET'
+        });
+        setSequences(response);
+        if (response.length > 0) {
+          setActiveTab(response[0].id);
+        }
+      } catch (err) {
+        console.error('Error fetching workspace:', err);
+      }
+    };
+
+    fetchWorkspace();
+  }, [chatId, callApi]);
 
   useEffect(() => {
     socket.connect();
 
-    socket.on('message', (message: ChatMessage) => {
+    socket.on('message', (message: Message) => {
       if (message.chatWorkspaceId === chatId || message.chatWorkspaceId === "global") {
         setMessages((prev) => [...prev, message]);
       }
@@ -32,7 +58,7 @@ export function Chat({ chatId }: ChatProps) {
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
 
-    const message: ChatMessage = {
+    const message: Message = {
       id: uuidv4(),
       content: newMessage,
       sender: 'user',
@@ -45,6 +71,22 @@ export function Chat({ chatId }: ChatProps) {
     setMessages((prev) => [...prev, message]);
     setNewMessage('');
   };
+
+  if (apiError) {
+    return (
+      <Flex h="100vh" p="lg" justify="center" align="center">
+        <Text color="red" size="xl">Failed to load workspace data</Text>
+      </Flex>
+    );
+  }
+
+  if (loading || sequences.length === 0) {
+    return (
+      <Flex h="100vh" p="lg" justify="center" align="center">
+        <Text>Loading...</Text>
+      </Flex>
+    );
+  }
 
   return (
     <Flex h="100vh" p="lg" gap="lg" style={{ boxSizing: 'border-box' }}>
@@ -91,7 +133,7 @@ export function Chat({ chatId }: ChatProps) {
         <Box style={{ borderTop: '4px solid #f44336', marginBottom: 16 }} />
         <Tabs
           value={activeTab}
-          onChange={(val) => setActiveTab(val ?? sequences[0]?.id)}
+          onChange={(val) => setActiveTab(val)}
           style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
         >
           <Tabs.List>
