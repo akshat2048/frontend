@@ -34,14 +34,26 @@ export function Chat({ workspaceId: chatId }: ChatProps) {
 
   useEffect(() => {
     socket.io.opts.extraHeaders = {
-      Authorization: `Bearer ${bearerToken}`
+      Authorization: `Bearer ${bearerToken}`,
+      WorkspaceId: chatId
     };
     socket.connect();
 
     socket.on('message', (message: Message) => {
-      if (message.chatWorkspaceId === chatId || message.chatWorkspaceId === "global") {
-        setMessages((prev) => [...prev, message]);
+      if (message.chatWorkspaceId === chatId) {
+        setMessages((prev) => {
+          // Check if the latest message has the same content
+          const latestMessage = prev[prev.length - 1];
+          if (latestMessage && latestMessage.content === message.content) {
+            return prev; // Return previous state if content matches
+          }
+          return [...prev, message];
+        });
       }
+    });
+
+    socket.on(`sequence_${chatId}`, (sequence: SequenceStepType[]) => {
+      setSequence(sequence);
     });
 
     return () => {
@@ -103,7 +115,7 @@ export function Chat({ workspaceId: chatId }: ChatProps) {
                     maxWidth: '80%',
                   }}
                 >
-                  <Text size="sm">{message.content}</Text>
+                  <Text size="sm" contentEditable={false}>{message.content}</Text>
                 </Box>
               </Group>
             ))}

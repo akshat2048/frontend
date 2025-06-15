@@ -11,12 +11,14 @@ export function ChatManager() {
   const [editingTab, setEditingTab] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const [isInitialized, setIsInitialized] = useState(false);
-  const { callApi, loading, error } = useApi<Workspace[]>();
+  const { callApi: callWorkspaceApi, loading, error } = useApi<Workspace[]>();
+  const { callApi: callWorkspaceRenameApi, loading: renameLoading, error: renameError } = useApi<Workspace>();
+
 
   useEffect(() => {
     const fetchWorkspaces = async () => {
       try {
-        const workspaces = await callApi('/workspace', {
+        const workspaces = await callWorkspaceApi('/workspace', {
           method: 'GET'
         });
         if (workspaces && workspaces.length > 0) {
@@ -24,7 +26,7 @@ export function ChatManager() {
           setActiveChat(workspaces[0].id);
         } else if (workspaces && workspaces.length === 0) {
           // Call the create workspace endpoint
-          const newWorkspace = await callApi('/workspace', {
+          const newWorkspace = await callWorkspaceApi('/workspace', {
             method: 'POST',
             body: JSON.stringify({ name: 'Chat 1' })
           });
@@ -53,7 +55,7 @@ export function ChatManager() {
 
   const addNewChat = async () => {
     // Call the create workspace endpoint
-    const newWorkspace = await callApi('/workspace', {
+    const newWorkspace = await callWorkspaceApi('/workspace', {
         method: 'POST',
         body: JSON.stringify({ name: 'Chat 1' })
       });
@@ -71,11 +73,20 @@ export function ChatManager() {
     setEditValue(currentName);
   };
 
-  const handleRename = (chatId: string) => {
-    setChats(chats.map(chat => 
-      chat.id === chatId ? { ...chat, name: editValue } : chat
-    ));
-    setEditingTab(null);
+  const handleRename = async (chatId: string) => {
+    try {
+      const response = await callWorkspaceRenameApi(`/workspace/${chatId}/rename`, {
+        method: 'PUT',
+        body: JSON.stringify({ name: editValue })
+      });
+
+    //   setChats(chats.map(chat => 
+    //     chat.id === chatId ? { ...chat, name: editValue } : chat
+    //   ));
+      setEditingTab(null);
+    } catch (error) {
+      console.error('Error renaming workspace:', error);
+    }
   };
 
   if (loading) {
